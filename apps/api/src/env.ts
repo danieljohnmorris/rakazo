@@ -63,6 +63,8 @@ export interface AppEnv {
   trustedProxies: string[];
   clientIpHeader: string;
   signupsEnabled: string | undefined;
+  /** RAKAZO_LOCAL_MODE=true: no login screen; every browser enters as one built-in local account. */
+  localMode: boolean;
   signupAllowlist: string | undefined;
   encryptionKey: string;
   contentEncryption: boolean;
@@ -209,6 +211,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     "AUTH_PASSWORD_ENABLED",
     "AUTH_BREACHED_PASSWORD_CHECK_ENABLED",
     "OIDC_ALLOW_SIGNUP_BYPASS",
+    "RAKAZO_LOCAL_MODE",
   ]) {
     const value = source[key];
     if (value && !["true", "false"].includes(value))
@@ -262,6 +265,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
       .filter(Boolean),
     clientIpHeader: optional(source.CLIENT_IP_HEADER)?.toLowerCase() ?? "x-forwarded-for",
     signupsEnabled: source.SIGNUPS_ENABLED,
+    localMode: source.RAKAZO_LOCAL_MODE === "true",
     signupAllowlist: source.SIGNUP_ALLOWLIST,
     encryptionKey: resolveEncryptionKey(source),
     contentEncryption: resolveContentEncryption(source),

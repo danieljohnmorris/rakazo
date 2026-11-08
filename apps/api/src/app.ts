@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { createHash } from "node:crypto";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import type {
@@ -818,8 +819,36 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
       passkeyRpId: auth.passkeyRpId,
       nativePasskeys: nativePasskeys(env, auth.passkeyRpId),
       crispWebsiteId: billing ? (env.crispWebsiteId ?? null) : null,
+      localMode: env.localMode,
     } satisfies AuthCapabilities);
   });
+  if (env.localMode) {
+    // One built-in account; its password derives from the auth secret and never leaves the server.
+    const localEmail = "local@rakazo.localhost";
+    const localPassword = createHash("sha256").update(`rakazo-local:${env.authSecret}`).digest("hex");
+    const authCall = (path: string, body: unknown, ip: string | undefined) =>
+      auth.handler(
+        withClientIp(
+          new Request(new URL(`/api/auth${path}`, env.authUrl), {
+            method: "POST",
+            headers: { "content-type": "application/json", origin: env.webOrigin },
+            body: JSON.stringify(body),
+          }),
+          ip,
+        ),
+      );
+    app.post("/api/local/enter", async (c) => {
+      const ip = requestClientIp(c);
+      // No password stands between this route and a session: serve only this machine.
+      if (!ip || !isLocalhostOrLoopbackIp(ip)) return c.json({ error: "local mode is loopback-only" }, 403);
+      let response = await authCall("/sign-in/email", { email: localEmail, password: localPassword }, ip);
+      if (!response.ok) {
+        await authCall("/sign-up/email", { email: localEmail, password: localPassword, name: "Local" }, ip);
+        response = await authCall("/sign-in/email", { email: localEmail, password: localPassword }, ip);
+      }
+      return response;
+    });
+  }
   mountAppAssociation(app, env);
   if (localEmailEmulator && env.nodeEnv === "development") {
     app.get(

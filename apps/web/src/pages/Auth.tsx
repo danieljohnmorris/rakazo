@@ -75,8 +75,18 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     setCapabilityError(false);
     let active = true;
     void fetchAuthCapabilities()
-      .then((capabilities) => {
-        if (active) setReset(capabilities);
+      .then(async (capabilities) => {
+        if (!active) return;
+        if (capabilities.localMode) {
+          const response = await fetch("/api/local/enter", { method: "POST", credentials: "include" });
+          if (!response.ok) throw new Error("local enter failed");
+          if (!active) return;
+          enterApp();
+          await authClient.getSession({ query: { disableCookieCache: true } });
+          window.location.replace(next ?? "/");
+          return;
+        }
+        setReset(capabilities);
       })
       .catch(() => {
         if (active) setCapabilityError(true);
