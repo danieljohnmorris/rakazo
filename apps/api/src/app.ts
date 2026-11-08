@@ -827,14 +827,17 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
     const { localEmail, localName } = env;
     // Earlier builds made the account under a fixed address; adopt it rather than start fresh.
     const legacyEmail = "local@rakazo.localhost";
-    const identityReady = (async () => {
-      if (localEmail !== legacyEmail)
+    const syncIdentity = async () => {
+      const taken = await prisma.user.findUnique({ where: { email: localEmail } });
+      if (!taken && localEmail !== legacyEmail)
         await prisma.user.updateMany({
           where: { email: legacyEmail },
           data: { email: localEmail },
         });
       await prisma.user.updateMany({ where: { email: localEmail }, data: { name: localName } });
-    })();
+    };
+    // Once per process, on first entry; a failure answers that request and retries on the next.
+    let identityReady: Promise<void> | undefined;
     const localPassword = createHash("sha256")
       .update(`rakazo-local:${env.authSecret}`)
       .digest("hex");
@@ -854,6 +857,10 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
       // No password stands between this route and a session: serve only this machine.
       if (!ip || !isLocalhostOrLoopbackIp(ip))
         return c.json({ error: "local mode is loopback-only" }, 403);
+      identityReady ??= syncIdentity().catch((error) => {
+        identityReady = undefined;
+        throw error;
+      });
       await identityReady;
       let response = await authCall(
         "/sign-in/email",

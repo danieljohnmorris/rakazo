@@ -73,8 +73,8 @@ RAKAZO_LOCAL_EMAIL=
 
 The sign-in page then calls `POST /api/local/enter`, which signs the browser into one built-in
 account, creating it on first entry. Better Auth needs an email on every account; this address is
-never mailed. The name is reapplied on every API start; an account made under the default address
-moves to `RAKAZO_LOCAL_EMAIL`, keeping its threads and settings. Changing a custom email later
+never mailed. The name is reapplied on the first entry after each API start; an account made under the default address
+moves to `RAKAZO_LOCAL_EMAIL` (unless that address already has an account), keeping its threads and settings. Changing a custom email later
 starts a new account. **Log out** returns to sign-in, which enters the same account again.
 
 The route answers only loopback clients (403 otherwise), but anyone who can reach the web port on
