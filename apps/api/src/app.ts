@@ -824,7 +824,17 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
   });
   if (env.localMode) {
     // One built-in account; its password derives from the auth secret and never leaves the server.
-    const localEmail = "local@rakazo.localhost";
+    const { localEmail, localName } = env;
+    // Earlier builds made the account under a fixed address; adopt it rather than start fresh.
+    const legacyEmail = "local@rakazo.localhost";
+    const identityReady = (async () => {
+      if (localEmail !== legacyEmail)
+        await prisma.user.updateMany({
+          where: { email: legacyEmail },
+          data: { email: localEmail },
+        });
+      await prisma.user.updateMany({ where: { email: localEmail }, data: { name: localName } });
+    })();
     const localPassword = createHash("sha256")
       .update(`rakazo-local:${env.authSecret}`)
       .digest("hex");
@@ -844,6 +854,7 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
       // No password stands between this route and a session: serve only this machine.
       if (!ip || !isLocalhostOrLoopbackIp(ip))
         return c.json({ error: "local mode is loopback-only" }, 403);
+      await identityReady;
       let response = await authCall(
         "/sign-in/email",
         { email: localEmail, password: localPassword },
@@ -852,7 +863,7 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
       if (!response.ok) {
         await authCall(
           "/sign-up/email",
-          { email: localEmail, password: localPassword, name: "Local" },
+          { email: localEmail, password: localPassword, name: localName },
           ip,
         );
         response = await authCall(

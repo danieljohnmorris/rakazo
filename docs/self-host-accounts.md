@@ -66,12 +66,16 @@ For one person on one machine, skip sign-in entirely:
 
 ```env
 RAKAZO_LOCAL_MODE=true
+# Optional: who the built-in account is (defaults: Local, local@rakazo.localhost).
+RAKAZO_LOCAL_NAME=
+RAKAZO_LOCAL_EMAIL=
 ```
 
 The sign-in page then calls `POST /api/local/enter`, which signs the browser into one built-in
-account named **Local** (`local@rakazo.localhost`), creating it on first entry. Better Auth needs an
-email on every account; this address is never mailed. **Log out** returns to sign-in, which enters
-the same account again.
+account, creating it on first entry. Better Auth needs an email on every account; this address is
+never mailed. The name is reapplied on every API start; an account made under the default address
+moves to `RAKAZO_LOCAL_EMAIL`, keeping its threads and settings. Changing a custom email later
+starts a new account. **Log out** returns to sign-in, which enters the same account again.
 
 The route answers only loopback clients (403 otherwise), but anyone who can reach the web port on
 this machine gets in: keep the web and API bound to `127.0.0.1` and never expose them with local

@@ -65,6 +65,9 @@ export interface AppEnv {
   signupsEnabled: string | undefined;
   /** RAKAZO_LOCAL_MODE=true: no login screen; every browser enters as one built-in local account. */
   localMode: boolean;
+  /** RAKAZO_LOCAL_NAME / RAKAZO_LOCAL_EMAIL: who the local-mode account is. */
+  localName: string;
+  localEmail: string;
   signupAllowlist: string | undefined;
   encryptionKey: string;
   contentEncryption: boolean;
@@ -266,6 +269,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     clientIpHeader: optional(source.CLIENT_IP_HEADER)?.toLowerCase() ?? "x-forwarded-for",
     signupsEnabled: source.SIGNUPS_ENABLED,
     localMode: source.RAKAZO_LOCAL_MODE === "true",
+    localName: optional(source.RAKAZO_LOCAL_NAME) ?? "Local",
+    localEmail: optional(source.RAKAZO_LOCAL_EMAIL)?.toLowerCase() ?? "local@rakazo.localhost",
     signupAllowlist: source.SIGNUP_ALLOWLIST,
     encryptionKey: resolveEncryptionKey(source),
     contentEncryption: resolveContentEncryption(source),
