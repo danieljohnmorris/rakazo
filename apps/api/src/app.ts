@@ -825,7 +825,9 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
   if (env.localMode) {
     // One built-in account; its password derives from the auth secret and never leaves the server.
     const localEmail = "local@rakazo.localhost";
-    const localPassword = createHash("sha256").update(`rakazo-local:${env.authSecret}`).digest("hex");
+    const localPassword = createHash("sha256")
+      .update(`rakazo-local:${env.authSecret}`)
+      .digest("hex");
     const authCall = (path: string, body: unknown, ip: string | undefined) =>
       auth.handler(
         withClientIp(
@@ -840,11 +842,24 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
     app.post("/api/local/enter", async (c) => {
       const ip = requestClientIp(c);
       // No password stands between this route and a session: serve only this machine.
-      if (!ip || !isLocalhostOrLoopbackIp(ip)) return c.json({ error: "local mode is loopback-only" }, 403);
-      let response = await authCall("/sign-in/email", { email: localEmail, password: localPassword }, ip);
+      if (!ip || !isLocalhostOrLoopbackIp(ip))
+        return c.json({ error: "local mode is loopback-only" }, 403);
+      let response = await authCall(
+        "/sign-in/email",
+        { email: localEmail, password: localPassword },
+        ip,
+      );
       if (!response.ok) {
-        await authCall("/sign-up/email", { email: localEmail, password: localPassword, name: "Local" }, ip);
-        response = await authCall("/sign-in/email", { email: localEmail, password: localPassword }, ip);
+        await authCall(
+          "/sign-up/email",
+          { email: localEmail, password: localPassword, name: "Local" },
+          ip,
+        );
+        response = await authCall(
+          "/sign-in/email",
+          { email: localEmail, password: localPassword },
+          ip,
+        );
       }
       return response;
     });

@@ -75,6 +75,9 @@ RAKAZO_LOCAL_MAX_TOKENS=4096
 RAKAZO_LOCAL_VISION_MODELS=qwen3-vl
 # Optional: model ids on this endpoint that accept OpenAI-style reasoning_effort.
 RAKAZO_LOCAL_REASONING_MODELS=qwen3:4b
+# Optional: picker names. Provider label, and id=Label pairs, comma-separated.
+RAKAZO_LOCAL_PROVIDER_NAME=DGX Sparks
+RAKAZO_LOCAL_MODEL_LABELS=qwen3:4b=Qwen3 4B
 ```
 
 A model in `RAKAZO_LOCAL_REASONING_MODELS` offers thinking levels and sends the chosen level as

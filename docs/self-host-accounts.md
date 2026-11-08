@@ -60,6 +60,27 @@ unset OWNER_EMAIL OWNER_PASSWORD
 For a source checkout, use `-f infra/compose/docker-compose.yml` instead. This creates an ordinary verified account and a personal workspace, with no server privileges. For an existing unverified account, its password must match before it can be verified; an existing verified account is left unchanged.
 Keep an installation without email on a trusted local network.
 
+## Single-user local mode
+
+For one person on one machine, skip sign-in entirely:
+
+```env
+RAKAZO_LOCAL_MODE=true
+```
+
+The sign-in page then calls `POST /api/local/enter`, which signs the browser into one built-in
+account named **Local** (`local@rakazo.localhost`), creating it on first entry. Better Auth needs an
+email on every account; this address is never mailed. **Log out** returns to sign-in, which enters
+the same account again.
+
+The route answers only loopback clients (403 otherwise), but anyone who can reach the web port on
+this machine gets in: keep the web and API bound to `127.0.0.1` and never expose them with local
+mode on. The value must be `true` or `false`; anything else stops the API at startup.
+
+The desktop app can use a local-mode stack: launch it with
+`RAKAZO_WEB_URL=http://127.0.0.1:5183`, or choose an existing server at first launch and enter the
+web address.
+
 ## Verification and password recovery email
 
 Password changes for signed-in users require no email configuration. Forgotten-password recovery

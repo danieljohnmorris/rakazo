@@ -40,6 +40,16 @@ export function localBaseUrl(): string {
   return value;
 }
 
+/** `id=Label` pairs, comma-separated: how the picker names a local model instead of its raw id. */
+function localModelLabels(): Map<string, string> {
+  const labels = new Map<string, string>();
+  for (const pair of (process.env.RAKAZO_LOCAL_MODEL_LABELS ?? "").split(",")) {
+    const at = pair.indexOf("=");
+    if (at > 0) labels.set(pair.slice(0, at).trim(), pair.slice(at + 1).trim());
+  }
+  return labels;
+}
+
 /** Throws instead of `Number(x) || default`, which would swallow a typo or accept a negative window. */
 function tokenLimit(name: string, fallback: number): number {
   const raw = process.env[name]?.trim();
@@ -56,7 +66,7 @@ function localModel(id: string): Model<"openai-completions"> {
   const reasoning = declaredVisionModelIds(LOCAL_REASONING_MODELS_ENV).has(id);
   return {
     id,
-    name: id,
+    name: localModelLabels().get(id) || id,
     api: "openai-completions",
     provider: LOCAL_PROVIDER_ID,
     baseUrl: localBaseUrl(),
@@ -79,7 +89,7 @@ export function localProvider(): Provider | undefined {
   if (!ids.length) return undefined;
   return createProvider({
     id: LOCAL_PROVIDER_ID,
-    name: "Local (Ollama / LM Studio)",
+    name: process.env.RAKAZO_LOCAL_PROVIDER_NAME?.trim() || "Local (Ollama / LM Studio)",
     baseUrl: localBaseUrl(),
     auth: {
       apiKey: {

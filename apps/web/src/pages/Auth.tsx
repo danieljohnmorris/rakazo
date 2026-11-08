@@ -78,7 +78,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       .then(async (capabilities) => {
         if (!active) return;
         if (capabilities.localMode) {
-          const response = await fetch("/api/local/enter", { method: "POST", credentials: "include" });
+          const response = await fetch("/api/local/enter", {
+            method: "POST",
+            credentials: "include",
+          });
           if (!response.ok) throw new Error("local enter failed");
           if (!active) return;
           enterApp();
